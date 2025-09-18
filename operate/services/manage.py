@@ -522,6 +522,15 @@ class ServiceManager:
         staking_program_id: str | None = None,
     ) -> MechMarketplaceConfig:
         """Get the mech configs."""
+        # Supafund override: revert to Gnosis Mech Marketplace V1 (legacy)
+        if staking_program_id == "supafund_test" and chain == "gnosis":
+            return MechMarketplaceConfig(
+                use_mech_marketplace=True,
+                mech_marketplace_address="0x4554fE75c1f5576c1d7F765B2A036c199Adae329",
+                priority_mech_address="0x552cEA7Bc33CbBEb9f1D90c1D11D2C6daefFd053",
+                priority_mech_service_id=975,
+            )
+
         sftxb = self.get_eth_safe_tx_builder(
             ledger_config=LedgerConfig(
                 chain=Chain(chain),
@@ -700,6 +709,14 @@ class ServiceManager:
                     "PRIORITY_MECH_SERVICE_ID"
                 ]["value"]
 
+            # Determine mech request price (wei). Bump for Supafund to improve response rate.
+            mech_request_price_str = "10000000000000000"  # 0.01
+            try:
+                if str(user_params.staking_program_id) == "supafund_test":
+                    mech_request_price_str = "60000000000000000"  # 0.06
+            except Exception:  # pragma: no cover - be robust if structure changes
+                pass
+
             env_var_to_value.update(
                 {
                     "ARBITRUM_ONE_LEDGER_RPC": get_default_rpc(Chain.ARBITRUM_ONE),
@@ -733,7 +750,7 @@ class ServiceManager:
                         "activity_checker"
                     ),
                     "MECH_CONTRACT_ADDRESS": mech_configs.priority_mech_address,
-                    "MECH_REQUEST_PRICE": "10000000000000000",
+                    "MECH_REQUEST_PRICE": mech_request_price_str,
                     "USE_MECH_MARKETPLACE": mech_configs.use_mech_marketplace,
                 }
             )
