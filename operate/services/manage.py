@@ -2591,13 +2591,55 @@ class ServiceManager:
                     asset_address, 0
                 )
 
-                if asset_address == ZERO_ADDRESS and any(
-                    balances[chain][master_safe][asset_address] == 0
-                    and balances[chain][address][asset_address] == 0
-                    and agent_asset_funding_values[address]["threshold"] > 0
-                    for address in agent_asset_funding_values
-                ):
-                    allow_start_agent = False
+                # Check if agent can start with native token (ZERO_ADDRESS)
+                # Consider bonded assets: if we have bonded OLAS >= min staking deposit,
+                # allow starting even with 0 native balance (agent needs to run to unstake/unbond)
+                if asset_address == ZERO_ADDRESS:
+                    # Get effective master_safe balance including bonded native assets
+                    effective_master_safe_native_balance = (
+                        balances[chain][master_safe][asset_address]
+                        + bonded_assets[chain].get(asset_address, 0)
+                    )
+
+                    # Get bonded OLAS amount (staking token) to check if sufficient for staking
+                    staking_contract = get_staking_contract(
+                        chain=ledger_config.chain,
+                        staking_program_id=chain_data.user_params.staking_program_id,
+                    )
+                    bonded_staking_token_amount = 0
+                    if staking_contract:
+                        try:
+                            sftxb = self.get_eth_safe_tx_builder(ledger_config=ledger_config)
+                            staking_params = sftxb.get_staking_params(
+                                staking_contract=staking_contract,
+                                fallback_params=None,
+                            )
+                            staking_token = staking_params.get("staking_token")
+                            min_staking_deposit = staking_params.get("min_staking_deposit", 0)
+                            if staking_token:
+                                bonded_staking_token_amount = bonded_assets[chain].get(
+                                    staking_token, 0
+                                )
+                        except Exception:  # pylint: disable=broad-except
+                            # If we can't get staking params, continue with 0
+                            pass
+
+                    # Allow starting if either:
+                    # 1. Have sufficient bonded OLAS (>= min_staking_deposit), OR
+                    # 2. Have sufficient native balance (effective_master_safe_native_balance > 0 and all agents funded)
+                    has_sufficient_bonded_olas = (
+                        bonded_staking_token_amount >= min_staking_deposit
+                        if staking_contract and min_staking_deposit > 0
+                        else False
+                    )
+
+                    if not has_sufficient_bonded_olas and any(
+                        effective_master_safe_native_balance == 0
+                        and balances[chain][address][asset_address] == 0
+                        and agent_asset_funding_values[address]["threshold"] > 0
+                        for address in agent_asset_funding_values
+                    ):
+                        allow_start_agent = False
 
             # Refill requirements for Master EOA
             eoa_funding_values = self.get_master_eoa_native_funding_values(
