@@ -45,9 +45,9 @@ class HealthChecker:
         self,
         service_manager: ServiceManager,
         logger: logging.Logger,
-        port_up_timeout: int | None = None,
-        sleep_period: int | None = None,
-        number_of_fails: int | None = None,
+        port_up_timeout: t.Optional[int] = None,
+        sleep_period: t.Optional[int] = None,
+        number_of_fails: t.Optional[int] = None,
     ) -> None:
         """Init the healtch checker."""
         self._jobs: t.Dict[str, asyncio.Task] = {}

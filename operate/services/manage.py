@@ -519,7 +519,7 @@ class ServiceManager:
         self,
         chain: str,
         ledger_api: LedgerApi,
-        staking_program_id: str | None = None,
+        staking_program_id: t.Optional[str] = None,
     ) -> MechMarketplaceConfig:
         """Get the mech configs."""
         # Supafund override: revert to Gnosis Mech Marketplace V1 (legacy)
@@ -713,7 +713,7 @@ class ServiceManager:
             mech_request_price_str = "10000000000000000"  # 0.01
             try:
                 if str(user_params.staking_program_id) == "supafund_test":
-                    mech_request_price_str = "60000000000000000"  # 0.06
+                    mech_request_price_str = "80000000000000000"  # 0.08
             except Exception:  # pragma: no cover - be robust if structure changes
                 pass
 

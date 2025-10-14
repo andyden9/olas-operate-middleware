@@ -60,7 +60,9 @@ def deserialize(obj: t.Any, otype: t.Any) -> t.Any:
     origin = getattr(otype, "__origin__", None)
 
     # Handle Union and Optional
-    if origin is t.Union or isinstance(otype, types.UnionType):
+    # types.UnionType only exists in Python 3.10+
+    is_union_type = hasattr(types, 'UnionType') and isinstance(otype, types.UnionType)
+    if origin is t.Union or is_union_type:
         for arg in t.get_args(otype):
             if arg is type(None):  # noqa: E721
                 continue

@@ -34,7 +34,7 @@ from enum import Enum
 from io import TextIOWrapper
 from pathlib import Path
 from traceback import print_exc
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Type, Union
 from venv import main as venv_cli
 
 import psutil
@@ -127,7 +127,7 @@ class BaseDeploymentRunner(AbstractDeploymentRunner, metaclass=ABCMeta):
             )
 
     @staticmethod
-    def _call_aea_command(cwd: str | Path, args: List[str]) -> None:
+    def _call_aea_command(cwd: Union[str, Path], args: List[str]) -> None:
         try:
             import os  # pylint: disable=redefined-outer-name,reimported,import-outside-toplevel
 
