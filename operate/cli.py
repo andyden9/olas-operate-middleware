@@ -410,7 +410,9 @@ def create_app(  # pylint: disable=too-many-locals, unused-argument, too-many-st
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
-        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     @app.middleware("http")
